@@ -16,6 +16,14 @@ command.nick = function(user, args) {
   user.name = name;
 }
 
+command.list = function(user, args) {
+  var list = [];
+  for(var u in users) {
+    list.push(users[u].name+"("+users[u].id+")");
+  }
+  user.socket.emit('message',"<strong>Online Users</strong>: "+list.join(", "));
+}
+
 _.mixin({
   capitalize: function(string) {
     return string.charAt(0).toUpperCase() + string.substring(1).toLowerCase();
@@ -64,6 +72,7 @@ io.on('connection', function(socket) {
   socket.emit('message', "Connected as <strong>"+user.name+"</strong>");
 
   command['nick'](user);
+  command['list'](user);
 
   socket.on('chat message', function(msg) {
     if(msg.charAt(0) == '/') {
@@ -85,6 +94,7 @@ io.on('connection', function(socket) {
 
   socket.on('disconnect', function() {
     socket.broadcast.emit('disconnection', user.name);
+    delete users[user.id];
     console.log('user '+user.name+' disconnected');
   });
 });
