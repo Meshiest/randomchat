@@ -68,7 +68,7 @@ io.on('connection', function(socket) {
 
   user.name = name;
   user.id = id;
-  user.color = _(Math.random()*10+5).hex()+_(Math.random()*10+5).hex()+_(Math.random()*10+%).hex();
+  user.color = _(Math.random()*10+5).hex()+_(Math.random()*10+5).hex()+_(Math.random()*10+5).hex();
   console.log("color "+user.color);
   user.socket = socket;
 
