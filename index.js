@@ -30,6 +30,12 @@ _.mixin({
   }
 });
 
+_.mixin({
+  hex: function(int) {
+    return Math.floor(int).toString(16);
+  }
+});
+
 var nounArr = [];
 fs.readFile(__dirname + '/noun.txt', 'utf-8', function(err, data) {
   if(!err) {
@@ -62,6 +68,8 @@ io.on('connection', function(socket) {
 
   user.name = name;
   user.id = id;
+  user.color = _(Math.random()*5+10).hex()+_(Math.random()*5+10).hex()+_(Math.random()*5+10).hex();
+  console.log("color "+user.color);
   user.socket = socket;
 
   users[id] = user;
@@ -89,7 +97,7 @@ io.on('connection', function(socket) {
       return;
     }
     console.log('message('+user.name+'): ' + msg);
-    io.emit('chat message', user.name, msg);
+    io.emit('chat message', user.name, user.color, msg);
   });
 
   socket.on('disconnect', function() {
