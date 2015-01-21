@@ -38,11 +38,11 @@
     });
     
     socket.on('connection', function(id, message) {
-      $('#messages').append($("<li>").html('<strong>'id+'</strong> connected'));
+      $('#messages').append($("<li>").html('<strong>'+id+'</strong> connected'));
     });
 
     socket.on('disconnection', function(id, message) {
-      $('#messages').append($("<li>").html('<strong>'id+'</strong> disconnected'));
+      $('#messages').append($("<li>").html('<strong>'+id+'</strong> disconnected'));
     });
     
 
