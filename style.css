@@ -1,0 +1,35 @@
+html, body {
+	margin, padding, top, left: 0;
+}
+body {
+	background: #DDF;
+}
+.content {
+	background: #FFFFF5;
+	width: 800px;
+	margin: 3em auto;
+	padding: 1em;
+	border-radius: 0.5em;
+	box-shadow: 0 0 10px #999;
+}
+.box {
+	background: #222;
+	color: #2E2;
+	font-family: monospace;
+	border-radius: 7px;
+	margin: 15px;
+	padding: 15px;
+	width: 0 auto;
+	box-shadow: 0 0 20px #444;
+}
+.box a:link {
+	color: #6E6;
+}
+.box a:visited {
+	color: #5D5;
+}
+h1, h2, h3 {
+	border-bottom-width: thin;
+	border-bottom-color: #999;
+	border-bottom-style: solid;
+}

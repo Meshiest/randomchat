@@ -29,6 +29,10 @@
       return false;
     });
     
+    socket.on('message', function(message) {
+      $('#messages').append($("<li>").html(message));
+    });
+
     socket.on('chat message', function(id, message) {
       $('#messages').append($("<li>").text(id+': '+message));
     });

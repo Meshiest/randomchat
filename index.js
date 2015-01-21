@@ -4,6 +4,18 @@ var io = require('socket.io')(http);
 var fs = require('fs');
 var _ = require('underscore');
 
+var users = {}
+
+var command = {}
+
+command.nick = function(user, args) {
+  var name = _(_.sample(adjArr)).capitalize()+" "+_(_.sample(nounArr)).capitalize().trim();
+  user.socket.broadcast.emit('message', '<strong>'+user.name+"</strong> is now known as <strong>"+name+"</strong>.");
+  console.log(user.name+" changed name to "+name);
+  user.socket.emit('message', "You are now known as <strong>"+name+"</strong>.");
+  user.name = name;
+}
+
 _.mixin({
   capitalize: function(string) {
     return string.charAt(0).toUpperCase() + string.substring(1).toLowerCase();
@@ -36,21 +48,44 @@ app.get('/', function(req, res) {
 
 io.on('connection', function(socket) {
 
+  var user = {};
   var id = idCount++;
-  var name = _(_.sample(adjArr)).capitalize()+" "+_(_.sample(nounArr)).capitalize();
+  var name = "User "+id;
 
-  socket.broadcast.emit('connection', name);
+  user.name = name;
+  user.id = id;
+  user.socket = socket;
 
-  console.log('user '+name+' connected');
+  users[id] = user;
+
+  socket.broadcast.emit('connection', user.name);
+
+  console.log('user '+user.name+' connected');
+  socket.emit('message', "Connected as <strong>"+user.name+"</strong>");
+
+  command['nick'](user);
 
   socket.on('chat message', function(msg) {
-    console.log('message('+name+'): ' + msg);
-    io.emit('chat message', name, msg);
+    if(msg.charAt(0) == '/') {
+      args = msg.substring(1).split(' ')
+      if(command.hasOwnProperty(args[0])) {
+        command[args[0]](user,args.shift);
+      } else {
+        socket.emit('message', '"<strong>'+args[0]+'</strong>" is not a valid command');
+      }
+      return;
+    }
+    if(msg.length == 0 || msg.length > 160) {
+      socket.emit('message', "Your message is empty or too long");
+      return;
+    }
+    console.log('message('+user.name+'): ' + msg);
+    io.emit('chat message', user.name, msg);
   });
 
   socket.on('disconnect', function() {
-    socket.broadcast.emit('disconnection', name);
-    console.log('user '+name+' disconnected');
+    socket.broadcast.emit('disconnection', user.name);
+    console.log('user '+user.name+' disconnected');
   });
 });
 
