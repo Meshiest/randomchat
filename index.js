@@ -37,6 +37,8 @@ command.hellban = function(user, args) {
   var kickedId = -1;
   for(var u in users) {
     var select = users[u];
+    if(select == user)
+      continue;
     if(select.name.toUpperCase().indexOf(name) >= 0) {
       if(kickedId != -1) {
         user.socket.emit('message', -1, "Found more than one user, please be more specific");
@@ -98,6 +100,8 @@ command.mute = function(user, args) {
   var mutedId = -1;
   for(var u in users) {
     var select = users[u];
+    if(select == user)
+      continue;
     if(select.name.toUpperCase().indexOf(name) >= 0) {
       if(mutedId != -1) {
         user.socket.emit('message', -1, "Found more than one user, please be more specific");
