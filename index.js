@@ -125,7 +125,7 @@ io.on('connection', function(socket) {
     }
 
     var time = new Date().getTime();
-    if(time < user.lastMessageTime + 300) {
+    if(time < user.lastMessageTime + 400) {
       socket.emit('message', "You're sending messages too fast!");
       return;
     }
