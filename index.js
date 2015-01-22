@@ -96,6 +96,8 @@ io.on('connection', function(socket) {
 
   user.name = name;
   user.id = id;
+  user.delay = 2000;
+  user.joinTime = new Date().getTime();
   user.lastMessage = '';
   user.lastMessageTime = '';
   user.color = 'fff'
@@ -129,24 +131,27 @@ io.on('connection', function(socket) {
     }
     
     msg = escape(msg);
+    var time = new Date().getTime();
 
     if(msg.length == 0 || msg.length > 160) {
       socket.emit('message', "Your message is empty or too long!");
+      user.delay += 100;
       return;
     }
     
-    if(msg == user.lastMessage) {
+    if(msg.toUpperCase() == user.lastMessage) {
       socket.emit('message', "You're being too repetitive!");
+      user.delay += 200;
       return;
     }
 
-    var time = new Date().getTime();
-    if(time < user.lastMessageTime + 400) {
+    if(time < user.lastMessageTime + user.delay) {
+      user.delay += 200;
       socket.emit('message', "You're sending messages too fast!");
       return;
     }
 
-    user.lastMessage = msg;
+    user.lastMessage = msg.toUpperCase();
     user.lastMessageTime = time;
 
     console.log('message('+user.name+'): ' + msg);
