@@ -102,6 +102,8 @@ io.on('connection', function(socket) {
 
   socket.on('chatmessage', function(msg) {
 
+    msg = msg.trim();
+
     if(msg.charAt(0) == '/') { //handle commands
       args = msg.substring(1).split(' ') //split commands into arguments
       if(command.hasOwnProperty(args[0])) { //check if command exists
