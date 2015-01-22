@@ -10,11 +10,19 @@ var users = {}
 var command = {}
 
 command.nick = function(user, args) {
-  var name = _(_.sample(adjArr)).capitalize().trim()+" "+_(_.sample(nounArr)).capitalize().trim();
-  user.socket.broadcast.emit('message', '<b>'+user.name+"</b> is now known as <b>"+name+"</b>.");
-  console.log(user.name+" changed name to "+name);
-  user.socket.emit('message', "You are now known as <b>"+name+"</b>.");
-  user.name = name;
+  var time = new Date().getTime();
+  if(!user.lastNameChange || user.lastNameChange + 5000 < time) {
+    var name = _(_.sample(adjArr)).capitalize().trim()+" "+_(_.sample(nounArr)).capitalize().trim();
+    var style = " style='position:relative;padding:3px;border-radius:6px;background:#"+user.color+";'"
+    user.socket.broadcast.emit('message', '<b'+style+'>'+user.name+"</b> is now known as <b"+style+">"+name+"</b>.");
+    console.log(user.name+" changed name to "+name);
+    user.socket.emit('message', "You are now known as <b"+style+">"+name+"</b>.");
+    user.name = name;
+
+    user.lastNameChange = time;
+  } else {
+    user.socket.emit('message',"You are doing that too often!");
+  }
 }
 
 command.list = function(user, args) {
@@ -26,8 +34,14 @@ command.list = function(user, args) {
 }
 
 command.color = function(user, args) {
-  user.color = _(Math.random()*7+8).hex()+_(Math.random()*7+8).hex()+_(Math.random()*7+8).hex();
-  user.socket.emit('message', "Your color is now <b style='position:relative;padding:3px;border-radius:6px;background:#"+user.color+";'>"+user.color+"</b>.");
+  var time = new Date().getTime();
+  if(!user.lastColorChange || user.lastColorChange + 5000 < time) {
+    user.color = _(Math.random()*7+8).hex()+_(Math.random()*7+8).hex()+_(Math.random()*7+8).hex();
+    user.socket.emit('message', "Your color is now <b style='position:relative;padding:3px;border-radius:6px;background:#"+user.color+";'>"+user.color+"</b>.");
+    user.lastColorChange = time;
+  } else {
+    user.socket.emit('message',"You are doing that too often!");
+  }
 }
 
 command.help = function(user, args) {
