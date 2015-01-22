@@ -9,7 +9,7 @@ var users = {}
 var command = {}
 
 command.nick = function(user, args) {
-  var name = _(_.sample(adjArr)).capitalize()+" "+_(_.sample(nounArr)).capitalize().trim();
+  var name = _(_.sample(adjArr)).capitalize().trim()+" "+_(_.sample(nounArr)).capitalize().trim();
   user.socket.broadcast.emit('message', '<strong>'+user.name+"</strong> is now known as <strong>"+name+"</strong>.");
   console.log(user.name+" changed name to "+name);
   user.socket.emit('message', "You are now known as <strong>"+name+"</strong>.");
