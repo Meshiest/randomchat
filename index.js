@@ -78,6 +78,7 @@ command.setname = function(user, args) {
     user.socket.emit('message', -1, "Usage: <b>/setname [name] [new name]</b>");
     return;
   }
+  var newName = args[0];
   var userName = (args[0]).toUpperCase();
   var select = findUserByName(userName);
   args.splice(1,1);
@@ -88,10 +89,10 @@ command.setname = function(user, args) {
     user.socket.emit('message', -1, "Found more than one user, please be more specific");
   } else if(select != -1) {
     var style = " style='position:relative;padding:3px;border-radius:6px;background:#"+users[select].color+";'"
-    users[select].socket.broadcast.emit('message', users[select].id, '<b'+style+'>'+users[select].name+"</b> is now known as <b"+style+">"+name+"</b>.");
-    console.log(users[select].name+" changed name to "+name);
-    users[select].socket.emit('message', -1, "You are now known as <b"+style+">"+name+"</b>.");
-    users[select].name = name;
+    users[select].socket.broadcast.emit('message', users[select].id, '<b'+style+'>'+users[select].name+"</b> is now known as <b"+style+">"+newName+"</b>.");
+    console.log(users[select].name+" changed name to "+newName);
+    users[select].socket.emit('message', -1, "You are now known as <b"+style+">"+newName+"</b>.");
+    users[select].name = newName;
   } else {
     user.socket.emit('message', -1, "Could not find a user to rename");
   }
