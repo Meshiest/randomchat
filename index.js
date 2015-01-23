@@ -10,7 +10,7 @@ var users = {}
 var command = {}
 var adminPassword = '24a6f21e26b64fa50f75ec522fff9459';
 
-var motd = "Welcome to <b>chatwhs</b>! Please don't spam, I know it's tempting, but please don't. It would be fantastic if you invited all of your friends (mostly because it's boring being alone here)";
+var motd = "Welcome to <b>chatwhs</b>! Please don't spam! I know it's tempting, but please don't. It would be fantastic if you invited all of your friends (mostly because it's boring being alone here)";
 
 command.admin = function(user, args) {
   if(args.length > 0)
