@@ -78,11 +78,10 @@ command.setname = function(user, args) {
     user.socket.emit('message', -1, "Usage: <b>/setname [name] [new name]</b>");
     return;
   }
-  var newName = args[0];
   var userName = (args[0]).toUpperCase();
   var select = findUserByName(userName);
   args.splice(1,1);
-  var name = args.join(' ');
+  var newName = args.join(' ');
 
 
   if(select == -2) {
