@@ -81,7 +81,7 @@ form input {
     scrollToBottom();
   });
 
-  socket.on('mute', function(id, name, hidden=false) {
+  socket.on('mute', function(id, name, hidden) {
     if(mute.indexOf(id) >= 0)
       return;
     mute.push(id);
