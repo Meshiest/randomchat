@@ -80,7 +80,7 @@ command.setname = function(user, args) {
   }
   var userName = (args[0]).toUpperCase();
   var select = findUserByName(userName);
-  args.splice(1,1);
+  args.splice(0,1);
   var newName = args.join(' ');
 
 
