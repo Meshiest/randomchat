@@ -295,7 +295,7 @@ io.on('connection', function(socket) {
       return;
     }
     
-if(msg.toUpperCase() == msg) {
+  if(msg.toUpperCase() == msg && msg.length > 10) {
       socket.emit('message', -1, "Please don't type in all capital letters!");
       user.delay += 200;
       return;
