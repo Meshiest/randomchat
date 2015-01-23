@@ -202,8 +202,8 @@ io.on('connection', function(socket) {
   console.log('user '+user.name+' connected');
   socket.emit('message', -1, "Connected as <b>"+user.name+"</b>");
 
-  command['nick'](user);
   command['color'](user);
+  command['nick'](user);
   command['list'](user);
   command['help'](user);
   command['motd'](user);
