@@ -7,10 +7,28 @@ var escape = require("html-escape");
 var md5 = require('MD5');
 
 var users = {}
+
 var command = {}
 var adminPassword = '24a6f21e26b64fa50f75ec522fff9459';
 
 var motd = "Welcome to <b>chatwhs</b>! Please don't spam! I know it's tempting, but please don't. It would be fantastic if you invited all of your friends (mostly because it's boring being alone here)";
+
+function findUserByName(name, exclude) {
+  name = name.toUpperCase();
+  var id = -1;
+  for(var u in users) {
+    var select = users[u];
+    if(select == exclude)
+      continue;
+    if(select.name.toUpperCase().indexOf(name) >= 0) {
+      if(id != -1) {
+        return -2;
+      }
+      id = select.id;
+    }
+  }
+  return id;
+}
 
 command.admin = function(user, args) {
   if(args.length > 0)
@@ -44,27 +62,64 @@ command.hellban = function(user, args) {
     return;
   }
   var name = (args[0] + (args.length > 1 ? " " + args[1] : "")).toUpperCase();
-  var kickedId = -1;
-  for(var u in users) {
-    var select = users[u];
-    if(select == user)
-      continue;
-    if(select.name.toUpperCase().indexOf(name) >= 0) {
-      if(kickedId != -1) {
-        user.socket.emit('message', -1, "Found more than one user, please be more specific");
-        return;
-      }
-      kickedId = select.id;
-    }
-  }
-  if(kickedId != -1) {
-    users[kickedId].socket.send({ event: 'disconnect' });
-    users[kickedId].socket.broadcast.emit('mute', kickedId, users[kickedId].name, true);
+  var mutedId = findUserByName(name, user);
+  if(mutedId == -2) {
+    user.socket.emit('message', -1, "Found more than one user, please be more specific");
+  } else if(mutedId != -1) {
+    users[mutedId].socket.broadcast.emit('mute', mutedId, users[mutedId].name, true);
   } else {
-    user.socket.emit('message', -1, "Could not find a user to kick");
+    user.socket.emit('message', -1, "Could not find a user to mute");
   }
 }
 command.hellban.adminOnly = true;
+
+command.setname = function(user, args) {
+  if(args.length < 1) {
+    user.socket.emit('message', -1, "Usage: <b>/setname [name] [new name]</b>");
+    return;
+  }
+  var userName = (args[0]).toUpperCase();
+  var select = findUserByName(userName);
+  args.splice(1,1);
+  var name = args.join(' ');
+
+
+  if(select == -2) {
+    user.socket.emit('message', -1, "Found more than one user, please be more specific");
+  } else if(select != -1) {
+    var style = " style='position:relative;padding:3px;border-radius:6px;background:#"+users[select].color+";'"
+    users[select].socket.broadcast.emit('message', users[select].id, '<b'+style+'>'+users[select].name+"</b> is now known as <b"+style+">"+name+"</b>.");
+    console.log(users[select].name+" changed name to "+name);
+    users[select].socket.emit('message', -1, "You are now known as <b"+style+">"+name+"</b>.");
+    users[select].name = name;
+  } else {
+    user.socket.emit('message', -1, "Could not find a user to rename");
+  }
+}
+command.setname.adminOnly = true;
+
+command.setcolor = function(user, args) {
+  if(args.length < 1) {
+    user.socket.emit('message', -1, "Usage: <b>/color [name] [color]</b>");
+    return;
+  }
+  var userName = (args[0]).toUpperCase();
+  var color = args[1]
+  var select = findUserByName(userName);
+
+
+  if(select == -2) {
+    user.socket.emit('message', -1, "Found more than one user, please be more specific");
+  } else if(select != -1) {
+    var style = " style='position:relative;padding:3px;border-radius:6px;background:#"+users[select].color+";'"
+    users[select].color = color;
+    users[select].socket.emit('message', -1, "Your color is now <b"+style+">"+users[select].color+"</b>.");
+
+  } else {
+    user.socket.emit('message', -1, "Could not find a user to recolor");
+  }
+}
+command.setcolor.adminOnly = true;
 
 command.nick = function(user, args) {
   var time = new Date().getTime();
@@ -73,7 +128,7 @@ command.nick = function(user, args) {
     var style = " style='position:relative;padding:3px;border-radius:6px;background:#"+user.color+";'"
     user.socket.broadcast.emit('message', user.id, '<b'+style+'>'+user.name+"</b> is now known as <b"+style+">"+name+"</b>.");
     console.log(user.name+" changed name to "+name);
-    user.socket.emit('message', user.id, "You are now known as <b"+style+">"+name+"</b>.");
+    user.socket.emit('message', -1, "You are now known as <b"+style+">"+name+"</b>.");
     user.name = name;
 
     user.lastNameChange = time;
@@ -107,21 +162,11 @@ command.mute = function(user, args) {
     user.socket.emit('message', -1, "Usage: <b>/mute [name]</b>"+args.join(','));
     return;
   }
-  var name = (args[0] + (args.length > 1 ? " " + args[1] : "")).toUpperCase();
-  var mutedId = -1;
-  for(var u in users) {
-    var select = users[u];
-    if(select == user)
-      continue;
-    if(select.name.toUpperCase().indexOf(name) >= 0) {
-      if(mutedId != -1) {
-        user.socket.emit('message', -1, "Found more than one user, please be more specific");
-        return;
-      }
-      mutedId = select.id;
-    }
-  }
-  if(mutedId != -1) {
+  var name = (args[0] + (args.length > 1 ? " " + args[1] : ""));
+  var mutedId = findUserByName(name, user);
+  if(mutedId == -2) {
+    user.socket.emit('message', -1, "Found more than one user, please be more specific");
+  } else if(mutedId != -1) {
     user.socket.emit('mute', mutedId, users[mutedId].name);
   } else {
     user.socket.emit('message', -1, "Could not find a user to mute");
@@ -154,6 +199,23 @@ _.mixin({
     return Math.floor(int).toString(16);
   }
 });
+
+function similar(a, b) {
+    var lengthA = a.length;
+    var lengthB = b.length;
+    var equivalency = 0;
+    var minLength = (a.length > b.length) ? b.length : a.length;    
+    var maxLength = (a.length < b.length) ? b.length : a.length;    
+    for(var i = 0; i < minLength; i++) {
+        if(a[i] == b[i]) {
+            equivalency++;
+        }
+    }
+
+
+    var weight = equivalency / maxLength;
+    return weight;
+}
 
 var nounArr = [];
 fs.readFile(__dirname + '/noun.txt', 'utf-8', function(err, data) {
@@ -188,6 +250,7 @@ io.on('connection', function(socket) {
   user.name = name;
   user.isAdmin = false;
   user.id = id;
+  user.history = [];
   user.delay = 1000;
   user.joinTime = new Date().getTime();
   user.lastMessage = '';
@@ -232,7 +295,13 @@ io.on('connection', function(socket) {
       return;
     }
     
-    if(msg.toUpperCase() == user.lastMessage) {
+if(msg.toUpperCase() == msg) {
+      socket.emit('message', -1, "Please don't type in all capital letters!");
+      user.delay += 200;
+      return;
+    }
+
+    if(msg.toUpperCase() == user.lastMessage || similar(msg.toUpperCase(),user.lastMessage) >= 0.80) {
       socket.emit('message', -1, "You're being too repetitive!");
       user.delay += 200;
       return;

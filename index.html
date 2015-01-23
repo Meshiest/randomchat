@@ -67,59 +67,63 @@ form input {
   var mute = [];
   var command = {};
 
-  var socket = io();
-  $('form').submit(function(){
-    socket.emit('chatmessage', $('#m').val());
-    $('#m').val('');
-    return false;
-  });
-  
-  socket.on('message', function(id, message) {
-    if(mute.indexOf(id) >= 0 && id != -1)
-      return;
-    $('#messages').append($("<li>").html(message));
-    scrollToBottom();
-  });
+  $('#messages').append($('<li>').text("Please wait one moment..."));
 
-  socket.on('mute', function(id, name, hidden) {
-    if(mute.indexOf(id) >= 0)
-      return;
-    mute.push(id);
-    if(!hidden)
-      $('#messages').append($("<li>").html("<b>"+name+"</b> has been muted."));
-  });
+  setTimeout(function() {
+    var socket = io();
+    $('form').submit(function(){
+      socket.emit('chatmessage', $('#m').val());
+      $('#m').val('');
+      return false;
+    });
+    
+    socket.on('message', function(id, message) {
+      if(mute.indexOf(id) >= 0 && id != -1)
+        return;
+      $('#messages').append($("<li>").html(message));
+      scrollToBottom();
+    });
 
-  socket.on('unmute', function(id, name) {
-    if(!mute.indexOf(id) >= 0)
-      return;
-    var index = -1;
-    for(var i = 0; i < mute.length; i++)
-      if(mute[i] == id) {
-        index = i;
-        break;
+    socket.on('mute', function(id, name, hidden) {
+      if(mute.indexOf(id) >= 0)
+        return;
+      mute.push(id);
+      if(!hidden)
+        $('#messages').append($("<li>").html("<b>"+name+"</b> has been muted."));
+    });
+
+    socket.on('unmute', function(id, name) {
+      if(!mute.indexOf(id) >= 0)
+        return;
+      var index = -1;
+      for(var i = 0; i < mute.length; i++)
+        if(mute[i] == id) {
+          index = i;
+          break;
+        }
+      if(index > -1) {
+        mute.pop(index);
+        $('#messages').append($("<li>").html("<b>"+name+"<b/> is no longer muted."));
       }
-    if(index > -1) {
-      mute.pop(index);
-      $('#messages').append($("<li>").html("<b>"+name+"<b/> is no longer muted."));
-    }
-  });
+    });
 
-  socket.on('chatmessage', function(id, name, color, message) {
-    if(mute.indexOf(id) >= 0 && id != -1)
-      return;
-    $('#messages').append($("<li style='background: #"+color+";'>").html('<u>'+name+'</u>: '+message));
-    scrollToBottom();
-  });
-  
-  socket.on('connection', function(name, message) {
-    $('#messages').append($("<li>").html('<b>'+name+'</b> connected'));
-    scrollToBottom();
-  });
+    socket.on('chatmessage', function(id, name, color, message) {
+      if(mute.indexOf(id) >= 0 && id != -1)
+        return;
+      $('#messages').append($("<li style='background: #"+color+";'>").html('<u>'+name+'</u>: '+message));
+      scrollToBottom();
+    });
+    
+    socket.on('connection', function(name, message) {
+      $('#messages').append($("<li>").html('<b>'+name+'</b> connected'));
+      scrollToBottom();
+    });
 
-  socket.on('disconnection', function(name, message) {
-    $('#messages').append($("<li>").html('<b>'+name+'</b> disconnected'));
-    scrollToBottom();
-  });
+    socket.on('disconnection', function(name, message) {
+      $('#messages').append($("<li>").html('<b>'+name+'</b> disconnected'));
+      scrollToBottom();
+    });
+  },3000);
   
 
   </script>
