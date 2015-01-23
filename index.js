@@ -33,6 +33,7 @@ command.setmotd = function(user, args) {
   motd = args.join(' ');
   io.emit('message', -1, "The MOTD has been changed");
 }
+command.setmotd.adminOnly = true;
 
 //socket.clients[kickedClientId].send({ event: 'disconnect' });
 //socket.clients[kickedClientId].connection.end();
