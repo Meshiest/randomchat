@@ -96,7 +96,8 @@ command.color = function(user, args) {
 command.list = function(user, args) {
   var list = [];
   for(var u in users) {
-    list.push(users[u].name+(users[u]==user ? "(You)" : ""));
+    var style = " style='position:relative;padding:3px;border-radius:6px;background:#"+users[u].color+";'"
+    list.push('<span'+style+'>'+users[u].name+(users[u]==user ? "(You)" : "")+"</span>");
   }
   user.socket.emit('message', -1, "<b>Online Users("+list.length+")</b>: "+list.join(", "));
 }
