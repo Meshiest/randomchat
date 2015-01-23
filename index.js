@@ -7,10 +7,10 @@ var escape = require("html-escape");
 var md5 = require('MD5');
 
 var users = {}
-
 var command = {}
-
 var adminPassword = '24a6f21e26b64fa50f75ec522fff9459';
+
+var motd = "Welcome to <b>chatwhs</b>! Please don't spam, I know it's tempting, but please don't. It would be fantastic if you invited all of your friends (mostly because it's boring being alone here)";
 
 command.admin = function(user, args) {
   if(args.length > 0)
@@ -25,12 +25,21 @@ command.admin = function(user, args) {
 }
 command.admin.hidden = true;
 
+command.setmotd = function(user, args) {
+  if(args.length < 1) {
+      user.socket.emit('message', -1, "Usage: <b>/setmotd [message]</b>");
+    return;
+  }
+  motd = args.join(' ');
+  io.emit('message', -1, "The MOTD has been changed");
+}
+
 //socket.clients[kickedClientId].send({ event: 'disconnect' });
 //socket.clients[kickedClientId].connection.end();
 
 command.hellban = function(user, args) {
   if(args.length < 1 || args.length > 2) {
-    user.socket.emit('message', -1, "Usage: <b>/kick [name]</b>"+args.join(','));
+    user.socket.emit('message', -1, "Usage: <b>/hellban [name]</b>");
     return;
   }
   var name = (args[0] + (args.length > 1 ? " " + args[1] : "")).toUpperCase();
@@ -128,6 +137,10 @@ command.help = function(user, args) {
   user.socket.emit('message', -1, "<b>Commands</b>: "+list.join(', '));
 };
 
+command.motd = function(user, args) {
+  user.socket.emit('message', -1, "<b>MOTD</b>: "+motd);
+};
+
 _.mixin({
   capitalize: function(string) {
     return string.charAt(0).toUpperCase() + string.substring(1).toLowerCase();
@@ -192,6 +205,7 @@ io.on('connection', function(socket) {
   command['color'](user);
   command['list'](user);
   command['help'](user);
+  command['motd'](user);
 
   socket.on('chatmessage', function(msg) {
 
