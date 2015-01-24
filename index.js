@@ -111,8 +111,8 @@ command.setcolor = function(user, args) {
   if(select == -2) {
     user.socket.emit('message', -1, "Found more than one user, please be more specific");
   } else if(select != -1) {
-    var style = " style='position:relative;padding:3px;border-radius:6px;background:#"+users[select].color+";'"
     users[select].color = color;
+    var style = getStyle(users[select].color)
     users[select].socket.emit('message', -1, "Your color is now <b"+style+">"+users[select].color+"</b>.");
 
   } else {
@@ -125,7 +125,7 @@ command.nick = function(user, args) {
   var time = new Date().getTime();
   if(!user.lastNameChange || user.lastNameChange + 5000 < time) {
     var name = _(_.sample(adjArr)).capitalize().trim()+" "+_(_.sample(nounArr)).capitalize().trim();
-    var style = " style='position:relative;padding:3px;border-radius:6px;background:#"+user.color+";'"
+    var style = getStyle(user.color);
     user.socket.broadcast.emit('message', user.id, '<b'+style+'>'+user.name+"</b> is now known as <b"+style+">"+name+"</b>.");
     console.log(user.name+" changed name to "+name);
     user.socket.emit('message', -1, "You are now known as <b"+style+">"+name+"</b>.");
@@ -141,7 +141,7 @@ command.color = function(user, args) {
   var time = new Date().getTime();
   if(!user.lastColorChange || user.lastColorChange + 5000 < time) {
     user.color = _(Math.random()*7+8).hex()+_(Math.random()*7+8).hex()+_(Math.random()*7+8).hex();
-    user.socket.emit('message', -1, "Your color is now <b style='position:relative;padding:3px;border-radius:6px;background:#"+user.color+";'>"+user.color+"</b>.");
+    user.socket.emit('message', -1, "Your color is now <b"+getStyle(user.color)+">"+user.color+"</b>.");
     user.lastColorChange = time;
   } else {
     user.socket.emit('message', -1, "You are doing that too often!");
@@ -151,7 +151,7 @@ command.color = function(user, args) {
 command.list = function(user, args) {
   var list = [];
   for(var u in users) {
-    var style = " style='position:relative;padding:3px;border-radius:6px;background:#"+users[u].color+";'"
+    var style = getStyle(users[u].color)
     list.push('<span'+style+'>'+users[u].name+(users[u]==user ? "(You)" : "")+"</span>");
   }
   user.socket.emit('message', -1, "<b>Online Users("+list.length+")</b>: "+list.join(", "));
@@ -199,6 +199,10 @@ _.mixin({
     return Math.floor(int).toString(16);
   }
 });
+
+function getStyle(color) {
+  return " style='position:relative;padding:3px;border-radius:6px;background:#"+color+";'";
+}
 
 function similar(a, b) {
     var lengthA = a.length;
