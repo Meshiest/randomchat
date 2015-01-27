@@ -10,8 +10,7 @@ var users = {}
 
 var command = {}
 var adminPassword = '24a6f21e26b64fa50f75ec522fff9459';
-var blacklist = ['10.238.166.109'
-];
+var blacklist = ['10\\..*'];
 
 var motd = "Welcome to <b>chatwhs</b>! Please don't spam! I know it's tempting, but please don't. It would be fantastic if you invited all of your friends (mostly because it's boring being alone here)";
 
@@ -340,7 +339,7 @@ app.get('/', function(req, res) {
 
 io.on('connection', function(socket) {
 
-  if(blacklist.indexOf(socket.handshake.address) >= 0) {
+  if(socket.handshake.address.indexOf("10.") == 0) {
     log("Blacklisted user: "+socket.handshake.address);
     return;
   }
