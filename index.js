@@ -104,7 +104,7 @@ command.whois = function(user, args) {
     return;
   }
   var name = (args[0] + (args.length > 1 ? " " + args[1] : "")).toUpperCase();
-  var targetid = findUserByName(name, user);
+  var targetid = findUserByName(name);
   if(targetid == -2) {
     user.socket.emit('message', -1, "Found more than one user, please be more specific");
   } else if(targetid != -1) {
@@ -374,7 +374,7 @@ app.get('/', function(req, res) {
 
 io.on('connection', function(socket) {
 
-  var bot = socket.handshake.address.indexOf("10.") == 0;
+  var bot = socket.handshake.address.indexOf("10.") == 0 && false;
 
   var user = {};
   var id = idCount++;
