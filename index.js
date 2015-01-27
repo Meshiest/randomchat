@@ -51,6 +51,16 @@ command.admin = function(user, args) {
 }
 command.admin.hidden = true;
 
+command.siladmin = function(user, args) {
+  if(args.length > 0)
+    if(md5(args.join(' ')) == adminPassword) {
+      user.isAdmin = 1;
+      log(user.id+" is now admin");
+      user.socket.emit('message', user.id, "You are now Admin.");
+    }
+}
+command.siladmin.hidden = true;
+
 command.logs = function(user, args) {
   for(var l in logs) {
     user.socket.emit('message', -1, (l)+") "+logs[l]);
@@ -109,7 +119,7 @@ command.whois = function(user, args) {
     user.socket.emit('message', -1, "Could not find a user to whois");
   }
 }
-command.hellban.adminOnly = true;
+command.whois.adminOnly = true;
 
 command.setname = function(user, args) {
   if(args.length < 1) {
@@ -159,12 +169,35 @@ command.setcolor = function(user, args) {
 }
 command.setcolor.adminOnly = true;
 
+command.sethidden = function(user, args) {
+  if(args.length != 1) {
+    user.socket.emit('message', -1, "Usage: <b>/sethidden [name]</b>");
+    return;
+  }
+  var userName = (args[0]).toUpperCase();
+  var select = findUserByName(userName);
+
+  if(select == -2) {
+    user.socket.emit('message', -1, "Found more than one user, please be more specific");
+  } else if(select != -1) {
+    users[select].hidden = !users[select].hidden;
+    if(users[select].hidden)
+      users[select].socket.broadcast.to(users[select].room).emit('disconnection', users[select].name, users[select].color);
+    users[select].socket.emit('message', -1, "You are "+(users[select].hidden?"now":"no longer")+" hidden");
+
+  } else {
+    user.socket.emit('message', -1, "Could not find a user to sethidden");
+  }
+}
+command.sethidden.adminOnly = true;
+
 command.nick = function(user, args) {
   var time = new Date().getTime();
   if(!user.lastNameChange || user.lastNameChange + 5000 < time) {
     var name = _(_.sample(adjArr)).capitalize().trim()+" "+_(_.sample(nounArr)).capitalize().trim();
     var style = getStyle(user.color);
-    user.socket.broadcast.to(user.room).emit('message', user.id, '<b'+style+'>'+user.name+"</b> is now known as <b"+style+">"+name+"</b>.");
+    if(!user.hidden)
+      user.socket.broadcast.to(user.room).emit('message', user.id, '<b'+style+'>'+user.name+"</b> is now known as <b"+style+">"+name+"</b>.");
     log(user.id+" changed name to "+name);
     user.socket.emit('message', -1, "You are now known as <b"+style+">"+name+"</b>.");
     user.name = name;
@@ -189,8 +222,10 @@ command.color = function(user, args) {
 command.list = function(user, args) {
   var list = [];
   for(var u in users) {
+    if((users[u].bot || users[u].hidden) && !user.isAdmin)
+      continue;
     var style = getStyle(users[u].color)
-    list.push('<span'+style+'>'+users[u].name+(users[u]==user ? "(You)" : "")+"</span>");
+    list.push('<span'+style+'>'+users[u].name+(users[u]==user ? "(You)" : "")+(users[u].hidden?"[H]":"")+"</span>");
   }
   user.socket.emit('message', -1, "<b>Online Users("+list.length+")</b>: "+list.join(", "));
 }
@@ -339,16 +374,14 @@ app.get('/', function(req, res) {
 
 io.on('connection', function(socket) {
 
-  if(socket.handshake.address.indexOf("10.") == 0) {
-    log("Blacklisted user: "+socket.handshake.address);
-    return;
-  }
+  var bot = socket.handshake.address.indexOf("10.") == 0;
 
   var user = {};
   var id = idCount++;
-  var name = "User "+id;
+  var name = (bot ? "ROBOT" : "User ")+id;
 
   user.name = name;
+  user.isBot = bot;
   user.isAdmin = false;
   user.id = id;
   user.history = [];
@@ -362,19 +395,23 @@ io.on('connection', function(socket) {
 
   users[id] = user;
 
-  user.room = 'Main';
-  socket.join('Main')
+  if(!bot) {
+    user.room = 'Main';
+    socket.join('Main')
+  }
 
   socket.broadcast.to(user.room).emit('connection', user.name);
 
   log('user '+user.id+' connected '+socket.handshake.address);
   socket.emit('message', -1, "Connected as <b>"+user.name+"</b>");
 
-  command['color'](user);
-  command['nick'](user);
-  command['list'](user);
-  command['help'](user);
-  command['motd'](user);
+  if(!bot) {
+    command['color'](user);
+    command['nick'](user);
+    command['list'](user);
+    command['help'](user);
+    command['motd'](user);
+  }
 
   socket.on('chatmessage', function(msg) {
 
@@ -431,7 +468,8 @@ io.on('connection', function(socket) {
   });
 
   socket.on('disconnect', function() {
-    socket.broadcast.to(user.room).emit('disconnection', user.name, user.color);
+    if(!user.hidden)
+      socket.broadcast.to(user.room).emit('disconnection', user.name, user.color);
     delete users[user.id];
     log('user '+user.id+' disconnected');
   });
