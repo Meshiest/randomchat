@@ -390,7 +390,7 @@ io.on('connection', function(socket) {
   var name = (bot ? "ROBOT" : "User ")+id;
 
   user.name = name;
-  user.isBot = bot;
+  user.bot = bot;
   user.addr = addr;
   user.isAdmin = false;
   user.id = id;
