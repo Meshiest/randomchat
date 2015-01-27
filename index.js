@@ -367,7 +367,7 @@ io.on('connection', function(socket) {
 
   socket.broadcast.to(user.room).emit('connection', user.name);
 
-  log('user '+user.id+' connected');
+  log('user '+user.id+' connected '+socket.handshake.address);
   socket.emit('message', -1, "Connected as <b>"+user.name+"</b>");
 
   command['color'](user);

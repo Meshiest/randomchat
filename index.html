@@ -129,7 +129,7 @@ form input {
     });
 
     var conmsg = function(name, color, msg){
-      $('#messages').append($("<li>").html("<b style='background: #"+color+";'>"+name+'</b> '+msg));
+      $('#messages').append($("<li>").html("<b style='position:relative;padding:3px;border-radius:6px;background: #"+color+";'>"+name+'</b> '+msg));
       scrollToBottom();
     }
 
