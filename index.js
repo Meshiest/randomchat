@@ -383,7 +383,7 @@ io.on('connection', function(socket) {
     ipAddr = undefined;
   }
   var addr = ipAddr;
-  var bot =  false;
+  var bot =  (addr.indexOf("12.") == 0);
 
   var user = {};
   var id = idCount++;
