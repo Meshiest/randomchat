@@ -375,7 +375,14 @@ app.get('/', function(req, res) {
 
 io.on('connection', function(socket) {
 
-  var addr = socket.manager.handshaken[socket.id].remoteAddress;
+  var ipAddr = socket.request.headers["x-forwarded-for"];
+  if (ipAddr){
+    var list = ipAddr.split(",");
+    ipAddr = list[list.length-1];
+  } else {
+    ipAddr = undefined;
+  }
+  var addr = ipAddr;
   var bot =  false;
 
   var user = {};
