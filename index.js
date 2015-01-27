@@ -108,7 +108,7 @@ command.whois = function(user, args) {
   if(targetid == -2) {
     user.socket.emit('message', -1, "Found more than one user, please be more specific");
   } else if(targetid != -1) {
-    var addr = users[targetid].socket.request.connection.remoteAddress;
+    var addr = users[targetid].socket.connection.remoteAddress;
     var style = getStyle(users[targetid].color)
     user.socket.emit('message', -1, "WHOIS");
     user.socket.emit('message', -1, "User: <b"+style+">"+users[targetid].name+"</b>");
@@ -374,7 +374,7 @@ app.get('/', function(req, res) {
 
 io.on('connection', function(socket) {
 
-  var bot = /*socket.request.connection.remoteAddress.indexOf("10.") == 0 &&*/ false;
+  var bot = socket.connection.remoteAddress.indexOf("10.") == 0 && false;
 
   var user = {};
   var id = idCount++;
@@ -402,7 +402,7 @@ io.on('connection', function(socket) {
 
   socket.broadcast.to(user.room).emit('connection', user.name);
 
-  log('user '+user.id+' connected '+socket.request.connection.remoteAddress);
+  log('user '+user.id+' connected '+socket.connection.remoteAddress);
   socket.emit('message', -1, "Connected as <b>"+user.name+"</b>");
 
   if(!bot) {
