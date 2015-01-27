@@ -10,8 +10,17 @@ var users = {}
 
 var command = {}
 var adminPassword = '24a6f21e26b64fa50f75ec522fff9459';
+var blacklist = ['10.238.166.109'
+];
 
 var motd = "Welcome to <b>chatwhs</b>! Please don't spam! I know it's tempting, but please don't. It would be fantastic if you invited all of your friends (mostly because it's boring being alone here)";
+
+var logs = []
+
+function log(msg) {
+  console.log(msg);
+  logs.push(msg);
+}
 
 function findUserByName(name, exclude) {
   name = name.toUpperCase();
@@ -37,11 +46,18 @@ command.admin = function(user, args) {
       user.color = 'f44';
       var style = getStyle(user.color)
       user.socket.broadcast.emit('message', user.id, '<b'+style+'>'+user.name+"</b> is now an Admin.");
-      console.log(user.name+" is now admin");
+      log(user.id+" is now admin");
       user.socket.emit('message', user.id, "You are now Admin.");
     }
 }
 command.admin.hidden = true;
+
+command.logs = function(user, args) {
+  for(var l in logs) {
+    user.socket.emit('message', -1, (l)+") "+logs[l]);
+  }
+}
+command.logs.adminOnly = true;
 
 command.setmotd = function(user, args) {
   if(args.length < 1) {
@@ -112,7 +128,7 @@ command.setname = function(user, args) {
   } else if(select != -1) {
     var style = getStyle(users[select].color)
     users[select].socket.broadcast.to(users[select].room).emit('message', users[select].id, '<b'+style+'>'+users[select].name+"</b> is now known as <b"+style+">"+newName+"</b>.");
-    console.log(users[select].name+" changed name to "+newName);
+    log(users[select].name+" changed name to "+newName);
     users[select].socket.emit('message', -1, "You are now known as <b"+style+">"+newName+"</b>.");
     users[select].name = newName;
   } else {
@@ -150,7 +166,7 @@ command.nick = function(user, args) {
     var name = _(_.sample(adjArr)).capitalize().trim()+" "+_(_.sample(nounArr)).capitalize().trim();
     var style = getStyle(user.color);
     user.socket.broadcast.to(user.room).emit('message', user.id, '<b'+style+'>'+user.name+"</b> is now known as <b"+style+">"+name+"</b>.");
-    console.log(user.name+" changed name to "+name);
+    log(user.id+" changed name to "+name);
     user.socket.emit('message', -1, "You are now known as <b"+style+">"+name+"</b>.");
     user.name = name;
 
@@ -257,7 +273,7 @@ command.pm = function(user, args) {
       user.delay -= 50;
     }
 
-    console.log('private message('+user.name+' -> '+users[targetid].name+'): ' + msg);
+    log('private message('+user.id+' -> '+users[targetid].id+'): ' + msg);
     users[targetid].socket.emit('privatechatmessage', user.id, user.name, user.color, msg);
     user.socket.emit('sendprivatechatmessage', user.id, user.name, users[targetid].name, user.color, users[targetid].color, msg);
   } else {
@@ -302,7 +318,7 @@ var nounArr = [];
 fs.readFile(__dirname + '/noun.txt', 'utf-8', function(err, data) {
   if(!err) {
     nounArr = data.split("\n")
-    console.log("Found "+nounArr.length+" nouns")
+    log("Found "+nounArr.length+" nouns")
   }
 });
 
@@ -310,7 +326,7 @@ var adjArr = [];
 fs.readFile(__dirname + '/adj.txt', 'utf-8', function(err, data) {
   if(!err) {
     adjArr = data.split("\n")
-    console.log("Found "+adjArr.length+" adjectives")
+    log("Found "+adjArr.length+" adjectives")
   }
 });
 
@@ -323,6 +339,11 @@ app.get('/', function(req, res) {
 });
 
 io.on('connection', function(socket) {
+
+  if(blacklist.indexOf(socket.handshake.address) >= 0) {
+    log("Blacklisted user: "+socket.handshake.address);
+    return;
+  }
 
   var user = {};
   var id = idCount++;
@@ -337,7 +358,7 @@ io.on('connection', function(socket) {
   user.lastMessage = '';
   user.lastMessageTime = '';
   user.color = 'fff'
-  //console.log("color "+user.color);
+  //log("color "+user.color);
   user.socket = socket;
 
   users[id] = user;
@@ -347,7 +368,7 @@ io.on('connection', function(socket) {
 
   socket.broadcast.to(user.room).emit('connection', user.name);
 
-  console.log('user '+user.name+' connected');
+  log('user '+user.id+' connected');
   socket.emit('message', -1, "Connected as <b>"+user.name+"</b>");
 
   command['color'](user);
@@ -363,6 +384,7 @@ io.on('connection', function(socket) {
     if(msg.charAt(0) == '/') { //handle commands
       args = msg.substring(1).split(' ') //split commands into arguments
       if(command.hasOwnProperty(args[0]) && (user.isAdmin && command[args[0]].adminOnly || !command[args[0]].adminOnly)) { //check if command exists
+        log('command '+user.id+" "+args.join(' '));
         command[args.splice(0,1)](user,args); //execute command
       } else {
         socket.emit('message', -1, '"<b>'+args[0]+'</b>" is not a valid command');
@@ -405,14 +427,14 @@ io.on('connection', function(socket) {
       user.delay -= 50;
     }
 
-    console.log('message('+user.name+'): ' + msg);
+    log('message('+user.id+'): ' + msg);
     io.to(user.room).emit('chatmessage', user.id, user.name, user.color, msg);
   });
 
   socket.on('disconnect', function() {
     socket.broadcast.to(user.room).emit('disconnection', user.name, user.color);
     delete users[user.id];
-    console.log('user '+user.name+' disconnected');
+    log('user '+user.id+' disconnected');
   });
 });
 
