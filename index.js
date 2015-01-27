@@ -35,7 +35,7 @@ command.admin = function(user, args) {
     if(md5(args.join(' ')) == adminPassword) {
       user.isAdmin = 1;
       user.color = 'f44';
-      var style = " style='position:relative;padding:3px;border-radius:6px;background:#"+user.color+";'"
+      var style = getStyle(user.color)
       user.socket.broadcast.emit('message', user.id, '<b'+style+'>'+user.name+"</b> is now an Admin.");
       console.log(user.name+" is now admin");
       user.socket.emit('message', user.id, "You are now Admin.");
@@ -73,6 +73,29 @@ command.hellban = function(user, args) {
 }
 command.hellban.adminOnly = true;
 
+command.whois = function(user, args) {
+  if(args.length < 1 || args.length > 2) {
+    user.socket.emit('message', -1, "Usage: <b>/whois [name]</b>");
+    return;
+  }
+  var name = (args[0] + (args.length > 1 ? " " + args[1] : "")).toUpperCase();
+  var targetid = findUserByName(name, user);
+  if(targetid == -2) {
+    user.socket.emit('message', -1, "Found more than one user, please be more specific");
+  } else if(targetid != -1) {
+    var addr = users[targetid].socket.handshake.address;
+    var style = getStyle(users[targetid].color)
+    user.socket.emit('message', -1, "WHOIS");
+    user.socket.emit('message', -1, "User: <b"+style+">"+users[targetid].name+"</b>");
+    user.socket.emit('message', -1, "ID: "+targetid);
+    user.socket.emit('message', -1, "Color: <b"+style+">"+users[targetid].color+"</b>");
+    user.socket.emit('message', -1, "Address: "+addr);
+  } else {
+    user.socket.emit('message', -1, "Could not find a user to whois");
+  }
+}
+command.hellban.adminOnly = true;
+
 command.setname = function(user, args) {
   if(args.length < 1) {
     user.socket.emit('message', -1, "Usage: <b>/setname [name] [new name]</b>");
@@ -87,8 +110,8 @@ command.setname = function(user, args) {
   if(select == -2) {
     user.socket.emit('message', -1, "Found more than one user, please be more specific");
   } else if(select != -1) {
-    var style = " style='position:relative;padding:3px;border-radius:6px;background:#"+users[select].color+";'"
-    users[select].socket.broadcast.emit('message', users[select].id, '<b'+style+'>'+users[select].name+"</b> is now known as <b"+style+">"+newName+"</b>.");
+    var style = getStyle(users[select].color)
+    users[select].socket.broadcast.to(users[select].room).emit('message', users[select].id, '<b'+style+'>'+users[select].name+"</b> is now known as <b"+style+">"+newName+"</b>.");
     console.log(users[select].name+" changed name to "+newName);
     users[select].socket.emit('message', -1, "You are now known as <b"+style+">"+newName+"</b>.");
     users[select].name = newName;
@@ -126,7 +149,7 @@ command.nick = function(user, args) {
   if(!user.lastNameChange || user.lastNameChange + 5000 < time) {
     var name = _(_.sample(adjArr)).capitalize().trim()+" "+_(_.sample(nounArr)).capitalize().trim();
     var style = getStyle(user.color);
-    user.socket.broadcast.emit('message', user.id, '<b'+style+'>'+user.name+"</b> is now known as <b"+style+">"+name+"</b>.");
+    user.socket.broadcast.to(user.room).emit('message', user.id, '<b'+style+'>'+user.name+"</b> is now known as <b"+style+">"+name+"</b>.");
     console.log(user.name+" changed name to "+name);
     user.socket.emit('message', -1, "You are now known as <b"+style+">"+name+"</b>.");
     user.name = name;
@@ -159,7 +182,7 @@ command.list = function(user, args) {
 
 command.mute = function(user, args) {
   if(args.length < 1 || args.length > 2) {
-    user.socket.emit('message', -1, "Usage: <b>/mute [name]</b>"+args.join(','));
+    user.socket.emit('message', -1, "Usage: <b>/mute [name]</b>");
     return;
   }
   var name = (args[0] + (args.length > 1 ? " " + args[1] : ""));
@@ -187,6 +210,60 @@ command.help = function(user, args) {
 command.motd = function(user, args) {
   user.socket.emit('message', -1, "<b>MOTD</b>: "+motd);
 };
+
+command.pm = function(user, args) {
+  if(args.length < 2 ) {
+    user.socket.emit('message', -1, "Usage: <b>/pm [name] [message]</b>");
+    return;
+  }
+  var name = args.splice(0,1)[0].toUpperCase();
+  var targetid = findUserByName(name, user);
+  if(targetid == -2) {
+    user.socket.emit('message', -1, "Found more than one user, please be more specific");
+  } else if(targetid != -1) {
+
+    msg = args.join(' ').trim();
+
+    msg = escape(msg);
+    var time = new Date().getTime();
+
+    if(msg.length == 0 || msg.length > 160) {
+      user.socket.emit('message', -1, "Your message is empty or too long!");
+      user.delay += 100;
+      return;
+    }
+    
+    if(msg.toUpperCase() == msg && msg.length > 10 && msg.toUpperCase() != msg.toLowerCase()) {
+      user.socket.emit('message', -1, "Please don't type in all capital letters!");
+      user.delay += 200;
+      return;
+    }
+
+    if(msg.toUpperCase() == user.lastMessage || similar(msg.toUpperCase(),user.lastMessage) >= 0.80) {
+      user.socket.emit('message', -1, "You're being too repetitive!");
+      user.delay += 200;
+      return;
+    }
+
+    if(time < user.lastMessageTime + user.delay) {
+      user.delay += 200;
+      user.socket.emit('message', -1, "You're sending messages too fast!");
+      return;
+    }
+
+    user.lastMessage = msg.toUpperCase();
+    user.lastMessageTime = time;
+    if(user.delay > 1000) {
+      user.delay -= 50;
+    }
+
+    console.log('private message('+user.name+' -> '+users[targetid].name+'): ' + msg);
+    users[targetid].socket.emit('privatechatmessage', user.id, user.name, user.color, msg);
+    user.socket.emit('sendprivatechatmessage', user.id, user.name, users[targetid].name, user.color, users[targetid].color, msg);
+  } else {
+    user.socket.emit('message', -1, "Could not find a user to message");
+  }
+}
 
 _.mixin({
   capitalize: function(string) {
@@ -265,7 +342,10 @@ io.on('connection', function(socket) {
 
   users[id] = user;
 
-  socket.broadcast.emit('connection', user.name);
+  user.room = 'Main';
+  socket.join('Main')
+
+  socket.broadcast.to(user.room).emit('connection', user.name);
 
   console.log('user '+user.name+' connected');
   socket.emit('message', -1, "Connected as <b>"+user.name+"</b>");
@@ -299,11 +379,13 @@ io.on('connection', function(socket) {
       return;
     }
     
-  if(msg.toUpperCase() == msg && msg.length > 10) {
+    if(msg.toUpperCase() == msg && msg.length > 10 && msg.toUpperCase() != msg.toLowerCase()) {
       socket.emit('message', -1, "Please don't type in all capital letters!");
       user.delay += 200;
       return;
     }
+
+//    if(msg.length / msg.split(' ').length)
 
     if(msg.toUpperCase() == user.lastMessage || similar(msg.toUpperCase(),user.lastMessage) >= 0.80) {
       socket.emit('message', -1, "You're being too repetitive!");
@@ -324,11 +406,11 @@ io.on('connection', function(socket) {
     }
 
     console.log('message('+user.name+'): ' + msg);
-    io.emit('chatmessage', user.id, user.name, user.color, msg);
+    io.to(user.room).emit('chatmessage', user.id, user.name, user.color, msg);
   });
 
   socket.on('disconnect', function() {
-    socket.broadcast.emit('disconnection', user.name);
+    socket.broadcast.to(user.room).emit('disconnection', user.name, user.color);
     delete users[user.id];
     console.log('user '+user.name+' disconnected');
   });

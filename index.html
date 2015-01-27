@@ -113,15 +113,41 @@ form input {
       $('#messages').append($("<li style='background: #"+color+";'>").html('<u>'+name+'</u>: '+message));
       scrollToBottom();
     });
-    
-    socket.on('connection', function(name, message) {
-      $('#messages').append($("<li>").html('<b>'+name+'</b> connected'));
+
+    socket.on('privatechatmessage', function(id, name, color, message) {
+      if(mute.indexOf(id) >= 0 && id != -1)
+        return;
+      $('#messages').append($("<li style='background: #"+color+";'>").html('<b>PM</b> <u>'+name+'</u>: '+message));
       scrollToBottom();
     });
 
-    socket.on('disconnection', function(name, message) {
-      $('#messages').append($("<li>").html('<b>'+name+'</b> disconnected'));
+    socket.on('sendprivatechatmessage', function(id, name, to, color, tocolor, message) {
+      if(mute.indexOf(id) >= 0 && id != -1) 
+        return;
+      $('#messages').append($("<li style='background: #"+color+";'>").html('<b style="position:relative;padding:3px;border-radius:6px;background:#'+tocolor+';">[PM -> '+to+']</b> <u>'+name+'</u>: '+message));
       scrollToBottom();
+    });
+
+    var conmsg = function(name, color, msg){
+      $('#messages').append($("<li>").html("<b style='background: #"+color+";'>"+name+'</b> '+msg));
+      scrollToBottom();
+    }
+
+    socket.on('connection', function(name, color) {
+      $('#messages').append($("<li>").html("<b>"+name+'</b> connected'));
+      scrollToBottom();
+    });
+
+    socket.on('disconnection', function(name, color) {
+      conmsg(name, color, "disconnected");
+    });
+
+    socket.on('roomjoin', function(name, color) {
+      conmsg(name, color, "joined the room");
+    });
+
+    socket.on('roomleave', function(name, color) {
+      conmsg(name, color, "left the room");
     });
   },3000);
   
