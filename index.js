@@ -114,7 +114,7 @@ command.whois = function(user, args) {
     user.socket.emit('message', -1, "User: <b"+style+">"+users[targetid].name+"</b>");
     user.socket.emit('message', -1, "ID: "+targetid);
     user.socket.emit('message', -1, "Color: <b"+style+">"+users[targetid].color+"</b>");
-    user.socket.emit('message', -1, "Address: "+addr);
+    user.socket.emit('message', -1, "Address: "+addr.address);
   } else {
     user.socket.emit('message', -1, "Could not find a user to whois");
   }
@@ -374,7 +374,7 @@ app.get('/', function(req, res) {
 
 io.on('connection', function(socket) {
 
-  var bot = socket.handshake.address.indexOf("10.") == 0 && false;
+  var bot = socket.handshake.address.address.indexOf("10.") == 0 && false;
 
   var user = {};
   var id = idCount++;
@@ -402,7 +402,7 @@ io.on('connection', function(socket) {
 
   socket.broadcast.to(user.room).emit('connection', user.name);
 
-  log('user '+user.id+' connected '+socket.handshake.address);
+  log('user '+user.id+' connected '+socket.handshake.address.address);
   socket.emit('message', -1, "Connected as <b>"+user.name+"</b>");
 
   if(!bot) {
