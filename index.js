@@ -374,7 +374,7 @@ app.get('/', function(req, res) {
 
 io.on('connection', function(socket) {
 
-  var bot = socket.request.connection.remoteAddress.indexOf("10.") == 0 && false;
+  var bot = /*socket.request.connection.remoteAddress.indexOf("10.") == 0 &&*/ false;
 
   var user = {};
   var id = idCount++;
